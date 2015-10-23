@@ -32,6 +32,37 @@ write_summary <- function(language,file) {
   meanDs <- dataRead$V3;
   cat(language, dim(dataRead)[1], mean(ns), sd(ns), mean(meanKsquares), sd(meanKsquares),"\n");
 }
+preliminary_visualization <- function(language,file){
+  languageData = read.table(file, header = FALSE);
+  colnames(languageData) = c("vertices","degree_2nd_moment","mean_length")
+  languageData = languageData[order(languageData$vertices), ]
+  
+  print(language)
+  
+  postscript(paste('./figures/',language,"_vertices","_meanLength",'.ps',sep = ""))
+  plot(languageData$vertices, languageData$mean_length, xlab = "vertices", ylab = "mean dependency length", main = language)
+  dev.off()
+  
+  postscript(paste('./figures/',language,"_logVertices","_logMeanLength",'.ps',sep = ""))
+  plot(log(languageData$vertices), log(languageData$mean_length), xlab = "log(vertices)", ylab = "log(mean dependency length)", main = language)
+  dev.off()
+  
+  mean_Language = aggregate(languageData, list(languageData$vertices), mean)
+  postscript(paste('./figures/',language,"_meanVertices","_meanMeanLength",'.ps',sep = ""))
+  plot(mean_Language$vertices, mean_Language$mean_length, xlab = "vertices", ylab = "mean mean dependency length", main = language)
+  dev.off()
+  
+  postscript(paste('./figures/',language,"_logMeanVertices","_logMeanMeanLength",'.ps',sep = ""))
+  plot(log(mean_Language$vertices), log(mean_Language$mean_length), xlab = "log(vertices)", ylab = "log(mean mean dependency length)", main = language)
+  dev.off()
+  
+  postscript(paste('./figures/',language,"_logMeanVertices","_logMeanLength",'_plusEstimation','.ps',sep = ""))
+  plot(log(mean_Language$vertices), log(mean_Language$mean_length), xlab = "log(vertices)", ylab = "log(mean mean dependency length)", main = language)
+  lines(log(mean_Language$vertices),log(mean_Language$mean_length),col = "green")
+  #lines(log(mean_Language$vertices),log((mean_Language$mean_vertices+1)/3),col = "red")
+  
+  dev.off()
+}
 source = read.table("list.txt", 
                     header = TRUE,               # this is to indicate the first line of the file contains the names of the columns instead of the real data
                     as.is = c("language","file") # this is need to have the cells treated as real strings and not as categorial data.
@@ -41,4 +72,7 @@ for (x in 1:nrow(source)) {
 }
 for (x in 1:nrow(source)) {
   write_summary(source$language[x], source$file[x])
+}
+for (x in 1:nrow(source)) {
+  preliminary_visualization(source$language[x], source$file[x])
 }
