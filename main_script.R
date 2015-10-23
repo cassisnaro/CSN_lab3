@@ -72,10 +72,12 @@ preliminary_visualization <- function(language,file){
   lines(languageData$vertices, languageData$vertices-1,col = "blue")
   dev.off()
 }
+
 source = read.table("list.txt", 
                     header = TRUE,               # this is to indicate the first line of the file contains the names of the columns instead of the real data
                     as.is = c("language","file") # this is need to have the cells treated as real strings and not as categorial data.
 )
+
 for (x in 1:nrow(source)) {
   check_validity(source$file[x])
 }
@@ -85,16 +87,6 @@ for (x in 1:nrow(source)) {
   l <- rbind(l,write_summary(source$language[x], source$file[x]))
 }
 xtable(l)
-
-#Read data?
-
-readData <-function(x) {
-  lang <- read.table(x, header = FALSE)
-  colnames(lang) = c("vertices","degree_2nd_moment", "mean_length")
-  lang = lang[order(lang$vertices), ]
-}
-
-d <- sapply(source$file, readData)
 
 
 #Plot
@@ -107,7 +99,26 @@ for (x in 1:nrow(source)) {
 
 
 #Ensemble of models
-a_initial = 4
-b_initial = 4
+model_fitting <- function(language,file){
+  languageData = read.table(file, header = FALSE);
+  colnames(languageData) = c("vertices","degree_2nd_moment","mean_length")
+  languageData = languageData[order(languageData$vertices), ]
 
-nonlinear_model = nls(mean_length~a*vertices^b,data=Catalan, start = list(a = a_initial, b = b_initial), trace = TRUE
+  #a_initial <- 1
+  #b_initial <- 1
+  
+  linear_model = lm(log(mean_length)~log(vertices), languageData)
+  a_initial = exp(coef(linear_model)[1])
+  b_initial = coef(linear_model)[2]
+
+  cat("Initial values of the model: ", a_initial, " - ", b_initial, "\n")  
+  nls(degree_2nd_moment~a*vertices^b,data=languageData, start = list(a = a_initial, b = b_initial), trace = TRUE)
+}
+
+language <- source$language[1]
+file <- source$file[1]
+m <- model_fitting(language,file)
+#Check homocedasticity!?
+
+RSS <- deviance(m)
+AIC <- AIC(m)
