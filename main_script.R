@@ -101,4 +101,7 @@ for (x in 1:nrow(source)) {
 
 
 #Ensemble of models
-#GIT TEST!!"()")()
+a_initial = 4
+b_initial = 4
+
+nonlinear_model = nls(mean_length~a*vertices^b,data=Catalan, start = list(a = a_initial, b = b_initial), trace = TRUE
