@@ -1,3 +1,5 @@
+library(xtable)
+
 tolerance <- 10E-6;
 check_validity <- function(file) {
   dataRead = read.table(file,header=FALSE)
@@ -30,7 +32,7 @@ write_summary <- function(language,file) {
   ns <- dataRead$V1;
   meanKsquares <- dataRead$V2;
   meanDs <- dataRead$V3;
-  cat(language, dim(dataRead)[1], mean(ns), sd(ns), mean(meanKsquares), sd(meanKsquares),"\n");
+  data.frame(language=language, N=dim(dataRead)[1], MeanN=mean(ns), St.DevN=sd(ns), MeanX=mean(meanKsquares), St.DevX=sd(meanKsquares));
 }
 source = read.table("list.txt", 
                     header = TRUE,               # this is to indicate the first line of the file contains the names of the columns instead of the real data
@@ -39,6 +41,9 @@ source = read.table("list.txt",
 for (x in 1:nrow(source)) {
   check_validity(source$file[x])
 }
+
+l <- data.frame()
 for (x in 1:nrow(source)) {
-  write_summary(source$language[x], source$file[x])
+  l <- rbind(l,write_summary(source$language[x], source$file[x]))
 }
+xtable(l)
