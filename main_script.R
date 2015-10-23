@@ -53,18 +53,18 @@ preliminary_visualization <- function(language,file){
   plot(mean_Language$vertices, mean_Language$mean_length, xlab = "vertices", ylab = "mean mean dependency length", main = language)
   dev.off()
   
-  postscript(paste('./figures/',language,"_logMeanVertices","_logMeanMeanLength",'.ps',sep = ""))
+  postscript(paste('./figures/',language,"_logVertices","_logMeanMeanLength",'.ps',sep = ""))
   plot(log(mean_Language$vertices), log(mean_Language$mean_length), xlab = "log(vertices)", ylab = "log(mean mean dependency length)", main = language)
   dev.off()
   
-  postscript(paste('./figures/',language,"_logMeanVertices","_logMeanLength",'_plusEstimation','.ps',sep = ""))
+  postscript(paste('./figures/',language,"_logVertices","_logMeanMeanLength",'_plusEstimation','.ps',sep = ""))
   plot(log(languageData$vertices), log(languageData$mean_length), xlab = "log(vertices)", ylab = "log(mean mean dependency length)", main = language)
   lines(log(mean_Language$vertices),log(mean_Language$mean_length),col = "green")
   lines(log(mean_Language$vertices),log((mean_Language$vertices+1)/3),col = "red")
   dev.off()
   
   postscript(paste('./figures/',language,"_vertices","_degree_2nd_moment",'_plusEstimation','.ps',sep = ""))
-  plot(languageData$vertices, mean_Language$degree_2n_moment, xlab = "vertices", ylab = "degree 2nd moment", main = language)
+  plot(languageData$vertices, languageData$degree_2n_moment, xlab = "vertices", ylab = "degree 2nd moment", main = language)
   lines(mean_Language$vertices,mean_Language$degree_2nd_moment,col = "green")
   lines(languageData$vertices,
         (1-1/languageData$vertices)*(5-6/languageData$vertices),col = "red")
