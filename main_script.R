@@ -47,3 +47,18 @@ for (x in 1:nrow(source)) {
   l <- rbind(l,write_summary(source$language[x], source$file[x]))
 }
 xtable(l)
+
+#Read data?
+
+readData <-function(x) {
+  lang <- read.table(x, header = FALSE)
+  colnames(lang) = c("vertices","degree_2nd_moment", "mean_length")
+  lang = lang[order(lang$vertices), ]
+}
+
+d <- sapply(source$file, readData)
+
+
+#Plot
+
+
