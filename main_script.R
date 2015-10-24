@@ -99,25 +99,96 @@ for (x in 1:nrow(source)) {
 
 
 #Ensemble of models
-model_fitting <- function(language,file){
+#Read one language file
+read_single_file <- function(file) {
   languageData = read.table(file, header = FALSE);
   colnames(languageData) = c("vertices","degree_2nd_moment","mean_length")
-  languageData = languageData[order(languageData$vertices), ]
+  languageData[order(languageData$vertices), ]
+}
 
+
+#For each model
+#modelFormula <- Formula of the non-linear model we want to use for fitting
+#linearFormula <- Formula of linear model we will use to estimate initial parameters
+#LanguageData <- Input data to fit.
+model_fitting <- function(modelFormula, linearFormula, languageData){
   #a_initial <- 1
   #b_initial <- 1
   
-  linear_model = lm(log(mean_length)~log(vertices), languageData)
+  #Calculate using the a linear model
+  linear_model = lm(linearFormula, languageData)
   a_initial = exp(coef(linear_model)[1])
   b_initial = coef(linear_model)[2]
 
   cat("Initial values of the model: ", a_initial, " - ", b_initial, "\n")  
-  nls(degree_2nd_moment~a*vertices^b,data=languageData, start = list(a = a_initial, b = b_initial), trace = TRUE)
+  nls(modelFormula,data=languageData, cpstart = list(a = a_initial, b = b_initial), trace = TRUE)
 }
+
+calcS <- function(m) {
+  sqrt(deviance(m)/df.residual(m))
+}
+
+#For each language
+#LanguageData <- Input data to fit.
+ensemble_fitting <- function(languageData) {
+  modelNames <- c("2","2")
+  nModels <- length(modelNames)
+  #AIC <-AIC(m)
+  #s <- sqrt(deviance(m)/df.residual(m))
+  #params <- coef(m)
+  
+  AICv <- rep(0,nModels)
+  sv <- rep(0,nModels)
+ 
+  #model2Copy
+  i <- 1
+  nlmF <- degree_2nd_moment ~ a*vertices^b
+  lmF <- log(degree_2nd_moment)~log(vertices)
+  m1 <- model_fitting(nlmF,lmF,languageData)
+  AICv[i] <- AIC(m1)
+  sv[i] <- calcS(m1)
+  
+  #model2
+  i <- 2
+  nlmF <- degree_2nd_moment ~ a*vertices^b
+  lmF <- log(degree_2nd_moment)~log(vertices)
+  m2 <- model_fitting(nlmF,lmF,languageData)
+  AICv[i] <- AIC(m2)
+  sv[i] <- calcS(m2)
+  
+  deltaAICv <- (AICv - AICv[which.min(AICv)])
+  
+  list(sv, AICv, deltaAICv)
+}
+
 
 language <- source$language[1]
 file <- source$file[1]
-m <- model_fitting(language,file)
+
+
+#For each different language, read and apply
+langData <- lapply(source$file, read_single_file)
+modelResult<- lapply(langData, ensemble_fitting)
+
+#Create the 3 Table2
+table2s <- data.frame()
+table2AIC <- data.frame()
+table2DeltaAIC <- data.frame()
+for (i in 1:length(modelResult)) {
+  #Warning, Gypsy programming ahead when creating the entries for each data.frame
+  #x[[1]] <- s
+  #x[[2]] <- AIC
+  #x[[3]] <- delta AIC
+  x <- modelResult[[i]]
+  table2s <- rbind(table2s, data.frame(Mod1=x[[1]][1], Mod2=x[[1]][2]))
+  table2AIC <- rbind(table2AIC, data.frame(Mod1=x[[2]][1], Mod2=x[[2]][2]))
+  table2DeltaAIC <- rbind(table2DeltaAIC, data.frame(Mod1=x[[3]][1], Mod2=x[[3]][2]))
+
+}
+
+
+sapply(langData,View)
+
 #Check homocedasticity!?
 
 RSS <- deviance(m)
