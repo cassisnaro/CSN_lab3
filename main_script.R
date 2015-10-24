@@ -171,31 +171,37 @@ ensemble_fitting <- function(languageData, language) {
   #Model 1 plot
   postscript(paste('./figures/',language,"_model1",'.ps',sep = ""))
   plot(languageData$vertices, languageData$degree_2nd_moment, xlab = "vertices", ylab = "degree 2nd moment", main = language)
-  b_model = coef(nonlinear_model_1)["b"];
-  lines(languageData$vertices, (languageData$vertices/2)^b_model, col="green")
+  b_model_1 = coef(nonlinear_model_1)["b"];
+  lines(languageData$vertices, (languageData$vertices/2)^b_model_1, col="green")
   dev.off()
   
   #Model 2 plot
   postscript(paste('./figures/',language,"_model2",'.ps',sep = ""))
   plot(languageData$vertices, languageData$degree_2nd_moment, xlab = "vertices", ylab = "degree 2nd moment", main = language)
-  a_model = coef(nonlinear_model_2)["a"];
-  b_model = coef(nonlinear_model_2)["b"];
-  lines(languageData$vertices, a_model*languageData$vertices^b_model, col="green")
+  a_model_2 = coef(nonlinear_model_2)["a"];
+  b_model_2 = coef(nonlinear_model_2)["b"];
+  lines(languageData$vertices, a_model_2*languageData$vertices^b_model_2, col="green")
   dev.off()
   
   #Model 3 plot
   postscript(paste('./figures/',language,"_model3",'.ps',sep = ""))
   plot(languageData$vertices, languageData$degree_2nd_moment, xlab = "vertices", ylab = "degree 2nd moment", main = language)
-  a_model = coef(nonlinear_model_3)["a"];
-  c_model = coef(nonlinear_model_3)["c"];
-  lines(languageData$vertices, a_model*exp(languageData$vertices*c_model), col="green")
+  a_model_3 = coef(nonlinear_model_3)["a"];
+  c_model_3 = coef(nonlinear_model_3)["c"];
+  lines(languageData$vertices, a_model_3*exp(languageData$vertices*c_model_3), col="green")
   lines(languageData$vertices, a_initial_model_3*exp(languageData$vertices*c_initial_model_3), col="red")
   dev.off()
 
   
   deltaAICv <- (AICv - AICv[which.min(AICv)])
   
-  list(sv, AICv, deltaAICv)
+  paramList <- list(
+                    c(b_model_1),
+                    c(a_model_2, b_model_2),
+                    c(a_model_3, c_model_3)
+                    )
+  
+  list(sv, AICv, deltaAICv, paramList)
 }
 
 
@@ -205,10 +211,11 @@ modelResult <- mapply(function(x,y) ensemble_fitting(as.data.frame(x), y), langD
 
 
 
-#Create the 3 Table2
+#Create the 3 Table2 and Table 3
 table2s <- data.frame()
 table2AIC <- data.frame()
 table2DeltaAIC <- data.frame()
+table3 <- data.frame()
 for (i in 1:length(source$language)) { #For each language
   #Warning, Gypsy programming ahead when creating the entries for each data.frame
   #x[[1]] <- s
@@ -218,7 +225,23 @@ for (i in 1:length(source$language)) { #For each language
   table2s <- rbind(table2s, data.frame(Mod1=x[[1]][1], Mod2=x[[1]][2], Mod3=x[[1]][3]))
   table2AIC <- rbind(table2AIC, data.frame(Mod1=x[[2]][1], Mod2=x[[2]][2], Mod3=x[[2]][3]))
   table2DeltaAIC <- rbind(table2DeltaAIC, data.frame(Mod1=x[[3]][1], Mod2=x[[3]][2], Mod3=x[[3]][3]))
+  
+  #Parameter table
+  #Model
+  #Parameter (nested in model)
+  par <- x[[4]]
+  table3 <- rbind(table3, data.frame(
+    b1= par[[1]][1], #Model 1
+    a2=par[[2]][1], b2=par[[2]][2], #Model 2
+    a3=par[[3]][1], c3=par[[3]][2] #Model 3
+    ))
 }
+
+#change row names by language
+rownames(table2s) <- source$language
+rownames(table2AIC) <- source$language
+rownames(table2DeltaAIC) <- source$language
+rownames(table3) <- source$language
 
 
 
