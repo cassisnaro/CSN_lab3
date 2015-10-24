@@ -111,8 +111,21 @@ model_fitting <- function(language,file){
   a_initial = exp(coef(linear_model)[1])
   b_initial = coef(linear_model)[2]
 
-  cat("Initial values of the model: ", a_initial, " - ", b_initial, "\n")  
-  nls(degree_2nd_moment~a*vertices^b,data=languageData, start = list(a = a_initial, b = b_initial), trace = TRUE)
+  b_initial_model_1 = log(mean(languageData$degree_2nd_moment)) / (log(mean(languageData$vertices))-log(2))
+  cat("Initial values of the model: ", b_initial_model_1, "\n")  
+  nonlinear_model_1 = nls(degree_2nd_moment~(vertices/2)^b,data=languageData, start = list( b = b_initial_model_1), trace = TRUE)
+  plot(languageData$vertices, languageData$degree_2nd_moment, xlab = "vertices", ylab = "degree 2nd moment", main = language)
+  b_model = coef(nonlinear_model_2)["b"];
+  lines(languageData$vertices, (languageData$vertices/2)^b_model, col="green")
+  
+  
+#   cat("Initial values of the model: ", a_initial, " - ", b_initial, "\n")  
+#   nonlinear_model_2 = nls(degree_2nd_moment~a*vertices^b,data=languageData, start = list(a = a_initial, b = b_initial), trace = TRUE)
+#   plot(languageData$vertices, languageData$degree_2nd_moment, xlab = "vertices", ylab = "degree 2nd moment", main = language)
+#   a_model = coef(nonlinear_model_2)["a"];
+#   b_model = coef(nonlinear_model_2)["b"];
+#   lines(languageData$vertices, a_model*languageData$vertices^b_model, col="green")
+  
 }
 
 language <- source$language[1]
