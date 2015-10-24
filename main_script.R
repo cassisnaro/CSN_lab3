@@ -112,36 +112,48 @@ model_fitting <- function(language,file){
   b_initial_model_1 = log(mean(languageData$degree_2nd_moment)) / (log(mean(languageData$vertices))-log(2))
   cat("Initial values of the model: ", b_initial_model_1, "\n")  
   nonlinear_model_1 = nls(degree_2nd_moment~(vertices/2)^b,data=languageData, start = list( b = b_initial_model_1), trace = TRUE)
+  postscript(paste('./figures/',language,"_model1",'.ps',sep = ""))
   plot(languageData$vertices, languageData$degree_2nd_moment, xlab = "vertices", ylab = "degree 2nd moment", main = language)
   b_model = coef(nonlinear_model_1)["b"];
   lines(languageData$vertices, (languageData$vertices/2)^b_model, col="green")
+  dev.off()
   
   linear_model = lm(log(degree_2nd_moment)~log(vertices), languageData)
   a_initial = exp(coef(linear_model)[1])
   b_initial = coef(linear_model)[2]
   cat("Initial values of the model: ", a_initial, " - ", b_initial, "\n")  
   nonlinear_model_2 = nls(degree_2nd_moment~a*vertices^b,data=languageData, start = list(a = a_initial, b = b_initial), trace = TRUE)
+  postscript(paste('./figures/',language,"_model2",'.ps',sep = ""))
   plot(languageData$vertices, languageData$degree_2nd_moment, xlab = "vertices", ylab = "degree 2nd moment", main = language)
   a_model = coef(nonlinear_model_2)["a"];
   b_model = coef(nonlinear_model_2)["b"];
   lines(languageData$vertices, a_model*languageData$vertices^b_model, col="green")
-
+  dev.off()
+  
   linear_model = lm(log(degree_2nd_moment)~vertices, languageData)
   a_initial = exp(coef(linear_model)[1])
   c_initial = coef(linear_model)[2]
   cat("Initial values of the model: ", a_initial, " - ", b_initial, "\n")  
   nonlinear_model_3 = nls(degree_2nd_moment~a*exp(vertices*c),data=languageData, start = list(a = a_initial, c = c_initial), trace = TRUE)
+  postscript(paste('./figures/',language,"_model3",'.ps',sep = ""))
   plot(languageData$vertices, languageData$degree_2nd_moment, xlab = "vertices", ylab = "degree 2nd moment", main = language)
   a_model = coef(nonlinear_model_3)["a"];
   c_model = coef(nonlinear_model_3)["c"];
   lines(languageData$vertices, a_model*exp(languageData$vertices*c_model), col="green")
   lines(languageData$vertices, a_initial*exp(languageData$vertices*c_initial), col="red")
+  dev.off()
 }
 
-language <- source$language[1]
-file <- source$file[1]
-m <- model_fitting(language,file)
-#Check homocedasticity!?
+source = read.table("list.txt", 
+                    header = TRUE,               # this is to indicate the first line of the file contains the names of the columns instead of the real data
+                    as.is = c("language","file") # this is need to have the cells treated as real strings and not as categorial data.
+)
+#Generate models
+for (x in 1:nrow(source)) {
+  m <- model_fitting(source$language[x],source$file[x])
+  #Check homocedasticity!?
+  
+#  RSS <- deviance(m)
+#   AIC <- AIC(m)
+}
 
-RSS <- deviance(m)
-AIC <- AIC(m)
