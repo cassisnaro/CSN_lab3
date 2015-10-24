@@ -107,54 +107,78 @@ read_single_file <- function(file) {
 }
 
 
-#For each model
-#modelFormula <- Formula of the non-linear model we want to use for fitting
-#linearFormula <- Formula of linear model we will use to estimate initial parameters
-#LanguageData <- Input data to fit.
-model_fitting <- function(modelFormula, linearFormula, languageData){
-  #a_initial <- 1
-  #b_initial <- 1
-  
-  #Calculate using the a linear model
-  linear_model = lm(linearFormula, languageData)
-  a_initial = exp(coef(linear_model)[1])
-  b_initial = coef(linear_model)[2]
-
-  cat("Initial values of the model: ", a_initial, " - ", b_initial, "\n")  
-  nls(modelFormula,data=languageData, cpstart = list(a = a_initial, b = b_initial), trace = TRUE)
-}
-
 calcS <- function(m) {
   sqrt(deviance(m)/df.residual(m))
 }
 
 #For each language
 #LanguageData <- Input data to fit.
-ensemble_fitting <- function(languageData) {
-  modelNames <- c("2","2")
-  nModels <- length(modelNames)
+ensemble_fitting <- function(languageData,language) {
   #AIC <-AIC(m)
   #s <- sqrt(deviance(m)/df.residual(m))
   #params <- coef(m)
+  nModels <- 3
   
-  AICv <- rep(0,nModels)
-  sv <- rep(0,nModels)
- 
-  #model2Copy
+  AICv <- rep(-1,nModels)
+  sv <- rep(-1,nModels)
+  
+  ##NonLinear Modelling
+  #Model 1
   i <- 1
-  nlmF <- degree_2nd_moment ~ a*vertices^b
-  lmF <- log(degree_2nd_moment)~log(vertices)
-  m1 <- model_fitting(nlmF,lmF,languageData)
-  AICv[i] <- AIC(m1)
-  sv[i] <- calcS(m1)
+  b_initial_model_1 = log(mean(languageData$degree_2nd_moment)) / (log(mean(languageData$vertices))-log(2))
+  cat("Initial values of the model 1: ", b_initial_model_1, "\n")  
+  nonlinear_model_1 = nls(degree_2nd_moment~(vertices/2)^b,data=languageData, start = list( b = b_initial_model_1), trace = TRUE)
   
-  #model2
+  AICv[i] <- AIC(nonlinear_model_1)
+  sv[i] <- calcS(nonlinear_model_1)
+  
+  #Model 2
   i <- 2
-  nlmF <- degree_2nd_moment ~ a*vertices^b
-  lmF <- log(degree_2nd_moment)~log(vertices)
-  m2 <- model_fitting(nlmF,lmF,languageData)
-  AICv[i] <- AIC(m2)
-  sv[i] <- calcS(m2)
+  linear_model = lm(log(degree_2nd_moment)~log(vertices), languageData)
+  a_initial_model_2 = coef(linear_model)[1]
+  b_initial_model_2 = coef(linear_model)[2]
+  cat("Initial values of the model 2: ", a_initial_model_2, " - ", b_initial_model_2, "\n")  
+  nonlinear_model_2 = nls(degree_2nd_moment~a*vertices^b,data=languageData, start = list(a = a_initial_model_2, b = b_initial_model_2), trace = TRUE)
+  
+  AICv[i] <- AIC(nonlinear_model_2)
+  sv[i] <- calcS(nonlinear_model_2)
+  
+  #Model 3
+  i <- 3
+  linear_model = lm(log(degree_2nd_moment)~vertices, languageData)
+  a_initial_model_3 = exp(coef(linear_model)[1])
+  c_initial_model_3 = coef(linear_model)[2]
+  cat("Initial values of the model 3: ", a_initial_model_3, " - ", c_initial_model_3, "\n")  
+  nonlinear_model_3 = nls(degree_2nd_moment~a*exp(vertices*c),data=languageData, start = list(a = a_initial_model_3, c = c_initial_model_3), trace = TRUE)
+  
+  AICv[i] <- AIC(nonlinear_model_3)
+  sv[i] <- calcS(nonlinear_model_3)
+  
+  ##Plots
+  #Model 1 plot
+  postscript(paste('./figures/',language,"_model1",'.ps',sep = ""))
+  plot(languageData$vertices, languageData$degree_2nd_moment, xlab = "vertices", ylab = "degree 2nd moment", main = language)
+  b_model = coef(nonlinear_model_1)["b"];
+  lines(languageData$vertices, (languageData$vertices/2)^b_model, col="green")
+  dev.off()
+  
+  #Model 2 plot
+  postscript(paste('./figures/',language,"_model2",'.ps',sep = ""))
+  plot(languageData$vertices, languageData$degree_2nd_moment, xlab = "vertices", ylab = "degree 2nd moment", main = language)
+  a_model = coef(nonlinear_model_2)["a"];
+  b_model = coef(nonlinear_model_2)["b"];
+  lines(languageData$vertices, a_model*languageData$vertices^b_model, col="green")
+  dev.off()
+  
+  #Model 3 plot
+  postscript(paste('./figures/',language,"_model3",'.ps',sep = ""))
+  plot(languageData$vertices, languageData$degree_2nd_moment, xlab = "vertices", ylab = "degree 2nd moment", main = language)
+  a_model = coef(nonlinear_model_3)["a"];
+  c_model = coef(nonlinear_model_3)["c"];
+  lines(languageData$vertices, a_model*exp(languageData$vertices*c_model), col="green")
+  lines(languageData$vertices, a_initial_model_3*exp(languageData$vertices*c_initial_model_3), col="red")
+  dev.off()
+
   
   deltaAICv <- (AICv - AICv[which.min(AICv)])
   
@@ -168,8 +192,15 @@ file <- source$file[1]
 
 #For each different language, read and apply
 langData <- lapply(source$file, read_single_file)
-modelResult<- lapply(langData, ensemble_fitting)
 
+#modelResult<- lapply(langData, ensemble_fitting)
+modelResult <- list() #THIS STILL DOESN'T WORK
+for(i in 1:length(langData)) {
+  modelResult <- list(modelResult, ensemble_fitting(langData[i], language[i]))
+}
+
+
+ensemble_fitting(langData[[1]])
 #Create the 3 Table2
 table2s <- data.frame()
 table2AIC <- data.frame()
@@ -191,5 +222,16 @@ sapply(langData,View)
 
 #Check homocedasticity!?
 
-RSS <- deviance(m)
-AIC <- AIC(m)
+#source = read.table("list.txt", 
+#                    header = TRUE,               # this is to indicate the first line of the file contains the names of the columns instead of the real data
+#                    as.is = c("language","file") # this is need to have the cells treated as real strings and not as categorial data.
+#)
+#Generate models
+#for (x in 1:nrow(source)) {
+#  m <- model_fitting(source$language[x],source$file[x])
+  #Check homocedasticity!?
+  
+#  RSS <- deviance(m)
+#   AIC <- AIC(m)
+#}
+
