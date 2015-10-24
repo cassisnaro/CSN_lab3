@@ -122,7 +122,7 @@ ensemble_fitting <- function(languageData, language) {
   #AIC <-AIC(m)
   #s <- sqrt(deviance(m)/df.residual(m))
   #params <- coef(m)
-  nModels <- 3
+  nModels <- 3+1
   
   AICv <- rep(-1,nModels)
   sv <- rep(-1,nModels)
@@ -158,6 +158,14 @@ ensemble_fitting <- function(languageData, language) {
   
   AICv[i] <- AIC(nonlinear_model_3)
   sv[i] <- calcS(nonlinear_model_3)
+  
+  #Model null
+  i <- 4
+  RSS <- sum((degree_2nd_moment - (1-1/vertices)*(5-6/vertices))^2)
+  n <- length(vertices)
+  p <- 0
+  sv[i] <- sqrt(RSS/(n - p))
+  AICv[i] <- n*log(2*pi) + n*log(RSS/n) + n + 2*(p+1)
   
   ##Plots
   #Model 1 plot
