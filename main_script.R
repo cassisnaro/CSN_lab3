@@ -1,5 +1,12 @@
 library(xtable)
 
+#Initialization
+source = read.table("list.txt", 
+                    header = TRUE,               # this is to indicate the first line of the file contains the names of the columns instead of the real data
+                    as.is = c("language","file") # this is need to have the cells treated as real strings and not as categorial data.
+)
+
+
 tolerance <- 10E-6;
 check_validity <- function(file) {
   dataRead = read.table(file,header=FALSE)
@@ -73,15 +80,12 @@ preliminary_visualization <- function(language,file){
   dev.off()
 }
 
-source = read.table("list.txt", 
-                    header = TRUE,               # this is to indicate the first line of the file contains the names of the columns instead of the real data
-                    as.is = c("language","file") # this is need to have the cells treated as real strings and not as categorial data.
-)
-
+#Check Validity
 for (x in 1:nrow(source)) {
   check_validity(source$file[x])
 }
 
+#Summary
 l <- data.frame()
 for (x in 1:nrow(source)) {
   l <- rbind(l,write_summary(source$language[x], source$file[x]))
@@ -113,7 +117,8 @@ calcS <- function(m) {
 
 #For each language
 #LanguageData <- Input data to fit.
-ensemble_fitting <- function(languageData,language) {
+ensemble_fitting <- function(languageData, language) {
+  print(language)
   #AIC <-AIC(m)
   #s <- sqrt(deviance(m)/df.residual(m))
   #params <- coef(m)
@@ -186,39 +191,29 @@ ensemble_fitting <- function(languageData,language) {
 }
 
 
-language <- source$language[1]
-file <- source$file[1]
-
-
 #For each different language, read and apply
 langData <- lapply(source$file, read_single_file)
-
-#modelResult<- lapply(langData, ensemble_fitting)
-modelResult <- list() #THIS STILL DOESN'T WORK
-for(i in 1:length(langData)) {
-  modelResult <- list(modelResult, ensemble_fitting(langData[i], language[i]))
-}
+modelResult <- mapply(function(x,y) ensemble_fitting(as.data.frame(x), y), langData, source$language)
 
 
-ensemble_fitting(langData[[1]])
+
 #Create the 3 Table2
 table2s <- data.frame()
 table2AIC <- data.frame()
 table2DeltaAIC <- data.frame()
-for (i in 1:length(modelResult)) {
+for (i in 1:length(source$language)) { #For each language
   #Warning, Gypsy programming ahead when creating the entries for each data.frame
   #x[[1]] <- s
   #x[[2]] <- AIC
   #x[[3]] <- delta AIC
-  x <- modelResult[[i]]
-  table2s <- rbind(table2s, data.frame(Mod1=x[[1]][1], Mod2=x[[1]][2]))
-  table2AIC <- rbind(table2AIC, data.frame(Mod1=x[[2]][1], Mod2=x[[2]][2]))
-  table2DeltaAIC <- rbind(table2DeltaAIC, data.frame(Mod1=x[[3]][1], Mod2=x[[3]][2]))
-
+  x <- modelResult[,i]
+  table2s <- rbind(table2s, data.frame(Mod1=x[[1]][1], Mod2=x[[1]][2], Mod3=x[[1]][3]))
+  table2AIC <- rbind(table2AIC, data.frame(Mod1=x[[2]][1], Mod2=x[[2]][2], Mod3=x[[2]][3]))
+  table2DeltaAIC <- rbind(table2DeltaAIC, data.frame(Mod1=x[[3]][1], Mod2=x[[3]][2], Mod3=x[[3]][3]))
 }
 
 
-sapply(langData,View)
+
 
 #Check homocedasticity!?
 
