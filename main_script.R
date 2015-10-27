@@ -1,4 +1,5 @@
 library(xtable)
+setEPS()#Set graphics as EPS
 
 #Initialization
 source = read.table("list.txt", 
@@ -110,6 +111,10 @@ read_single_file <- function(file) {
   languageData[order(languageData$vertices), ]
 }
 
+aggregate_data <- function(d) {
+  aggregate(d,list(d$vertices),mean) 
+}
+
 
 calcS <- function(m) {
   sqrt(deviance(m)/df.residual(m))
@@ -201,6 +206,8 @@ ensemble_fitting <- function(languageData, language) {
 
 #For each different language, read and apply
 langData <- lapply(source$file, read_single_file)
+langData <- lapply(langData, aggregate_data)
+
 modelResult <- mapply(function(x,y) ensemble_fitting(as.data.frame(x), y), langData, source$language)
 
 
