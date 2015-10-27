@@ -111,8 +111,13 @@ read_single_file <- function(file) {
   languageData[order(languageData$vertices), ]
 }
 
-aggregate_data <- function(d) {
-  aggregate(d,list(d$vertices),mean) 
+conditional_aggregate_data <- function(d,b) {
+  if(b){ #if 1 -> aggregate
+    aggregate(d,list(d$vertices),mean) 
+  }
+  else {
+    d
+  }
 }
 
 
@@ -206,7 +211,9 @@ ensemble_fitting <- function(languageData, language) {
 
 #For each different language, read and apply
 langData <- lapply(source$file, read_single_file)
-langData <- lapply(langData, aggregate_data)
+#Based on the results of visualControlHomocedasticity.R
+aggVect <- c(TRUE,FALSE,TRUE,TRUE,TRUE,FALSE,FALSE,TRUE,TRUE,TRUE) #We aggregate all except Basque, English and Greek
+langData <- mapply(conditional_aggregate_data, langData,aggVect)
 
 modelResult <- mapply(function(x,y) ensemble_fitting(as.data.frame(x), y), langData, source$language)
 
