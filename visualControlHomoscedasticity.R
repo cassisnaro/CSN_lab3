@@ -5,6 +5,8 @@ source = read.table("list.txt",
                     as.is = c("language","file") # this is need to have the cells treated as real strings and not as categorial data.
 )
 
+setEPS()#Set graphics as EPS
+
 for(x in 1:nrow(source)){
   dataRead = read.table(source$file[x],header=FALSE)
   colnames(dataRead) = c("vertices","degree_2nd_moment","mean_length")
