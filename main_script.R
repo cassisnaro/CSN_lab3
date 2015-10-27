@@ -1,4 +1,5 @@
 library(xtable)
+setEPS()#Set graphics as EPS
 
 #Initialization
 source = read.table("list.txt", 
@@ -68,6 +69,7 @@ preliminary_visualization <- function(language,file){
   postscript(paste('./figures/',language,"_logVertices","_logMeanMeanLength",'_plusEstimation','.eps',sep = ""))
   plot(log(languageData$vertices), log(languageData$mean_length), xlab = "log(vertices)", ylab = "log(mean mean dependency length)", main = language)
   lines(log(mean_Language$vertices),log(mean_Language$mean_length),col = "green")
+
   lines(log(mean_Language$vertices),log((mean_Language$vertices+1)/3),col = "red")
   dev.off()
   
@@ -109,6 +111,15 @@ read_single_file <- function(file) {
   languageData = read.table(file, header = FALSE);
   colnames(languageData) = c("vertices","degree_2nd_moment","mean_length")
   languageData[order(languageData$vertices), ]
+}
+
+conditional_aggregate_data <- function(d,b) {
+  if(b){ #if 1 -> aggregate
+    aggregate(d,list(d$vertices),mean) 
+  }
+  else {
+    d
+  }
 }
 
 
@@ -171,45 +182,58 @@ ensemble_fitting <- function(languageData, language) {
   ##Plots
   #Model 1 plot
   postscript(paste('./figures/',language,"_model1",'.eps',sep = ""))
-  plot(languageData$vertices, languageData$degree_2nd_moment, xlab = "vertices", ylab = "degree 2nd moment", main = paste(language," model 1"))
-  b_model = coef(nonlinear_model_1)["b"];
-  lines(languageData$vertices, (languageData$vertices/2)^b_model, col="green")
+  plot(languageData$vertices, languageData$degree_2nd_moment, xlab = "vertices", ylab = "degree 2nd moment", main = language)
+  b_model_1 = coef(nonlinear_model_1)["b"];
+  lines(languageData$vertices, (languageData$vertices/2)^b_model_1, col="green")
   dev.off()
   
   #Model 2 plot
   postscript(paste('./figures/',language,"_model2",'.eps',sep = ""))
-  plot(languageData$vertices, languageData$degree_2nd_moment, xlab = "vertices", ylab = "degree 2nd moment", main = paste(language," model 2"))
-  a_model = coef(nonlinear_model_2)["a"];
-  b_model = coef(nonlinear_model_2)["b"];
-  lines(languageData$vertices, a_model*languageData$vertices^b_model, col="green")
+  plot(languageData$vertices, languageData$degree_2nd_moment, xlab = "vertices", ylab = "degree 2nd moment", main = language)
+  a_model_2 = coef(nonlinear_model_2)["a"];
+  b_model_2 = coef(nonlinear_model_2)["b"];
+  lines(languageData$vertices, a_model_2*languageData$vertices^b_model_2, col="green")
   dev.off()
   
   #Model 3 plot
   postscript(paste('./figures/',language,"_model3",'.eps',sep = ""))
-  plot(languageData$vertices, languageData$degree_2nd_moment, xlab = "vertices", ylab = "degree 2nd moment", main = paste(language," model 3"))
-  a_model = coef(nonlinear_model_3)["a"];
-  c_model = coef(nonlinear_model_3)["c"];
-  lines(languageData$vertices, a_model*exp(languageData$vertices*c_model), col="green")
+  plot(languageData$vertices, languageData$degree_2nd_moment, xlab = "vertices", ylab = "degree 2nd moment", main = language)
+  a_model_3 = coef(nonlinear_model_3)["a"];
+  c_model_3 = coef(nonlinear_model_3)["c"];
+  lines(languageData$vertices, a_model_3*exp(languageData$vertices*c_model_3), col="green")
+
   lines(languageData$vertices, a_initial_model_3*exp(languageData$vertices*c_initial_model_3), col="red")
   dev.off()
 
   
   deltaAICv <- (AICv - AICv[which.min(AICv)])
   
-  list(sv, AICv, deltaAICv)
+  paramList <- list(
+    c(b_model_1),
+    c(a_model_2, b_model_2),
+    c(a_model_3, c_model_3)
+  )
+    
+  list(sv, AICv, deltaAICv, paramList)
 }
 
 
 #For each different language, read and apply
 langData <- lapply(source$file, read_single_file)
+#Based on the results of visualControlHomocedasticity.R
+aggVect <- c(TRUE,FALSE,TRUE,TRUE,TRUE,FALSE,FALSE,TRUE,TRUE,TRUE) #We aggregate all except Basque, English and Greek
+langData <- mapply(conditional_aggregate_data, langData,aggVect)
+
 modelResult <- mapply(function(x,y) ensemble_fitting(as.data.frame(x), y), langData, source$language)
 
 
 
-#Create the 3 Table2
+#Create the 3 Table2 and Table 3
 table2s <- data.frame()
 table2AIC <- data.frame()
 table2DeltaAIC <- data.frame()
+
+table3 <- data.frame()
 for (i in 1:length(source$language)) { #For each language
   #Warning, Gypsy programming ahead when creating the entries for each data.frame
   #x[[1]] <- s
@@ -219,23 +243,22 @@ for (i in 1:length(source$language)) { #For each language
   table2s <- rbind(table2s, data.frame(Mod1=x[[1]][1], Mod2=x[[1]][2], Mod3=x[[1]][3]))
   table2AIC <- rbind(table2AIC, data.frame(Mod1=x[[2]][1], Mod2=x[[2]][2], Mod3=x[[2]][3]))
   table2DeltaAIC <- rbind(table2DeltaAIC, data.frame(Mod1=x[[3]][1], Mod2=x[[3]][2], Mod3=x[[3]][3]))
+  
+  #Parameter table
+  #Parameter (nested in model)
+  par <- x[[4]]
+  table3 <- rbind(table3, data.frame(
+    b1= par[[1]][1], #Model 1
+    a2=par[[2]][1], b2=par[[2]][2], #Model 2
+    a3=par[[3]][1], c3=par[[3]][2] #Model 3
+  ))
+
 }
 
 
-
-
-#Check homocedasticity!?
-
-#source = read.table("list.txt", 
-#                    header = TRUE,               # this is to indicate the first line of the file contains the names of the columns instead of the real data
-#                    as.is = c("language","file") # this is need to have the cells treated as real strings and not as categorial data.
-#)
-#Generate models
-#for (x in 1:nrow(source)) {
-#  m <- model_fitting(source$language[x],source$file[x])
-  #Check homocedasticity!?
-  
-#  RSS <- deviance(m)
-#   AIC <- AIC(m)
-#}
+#change row names by language
+rownames(table2s) <- source$language
+rownames(table2AIC) <- source$language
+rownames(table2DeltaAIC) <- source$language
+rownames(table3) <- source$language
 
