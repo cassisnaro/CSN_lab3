@@ -6,6 +6,7 @@ source = read.table("list.txt",
                     as.is = c("language","file") # this is need to have the cells treated as real strings and not as categorial data.
 )
 
+setEPS()
 
 tolerance <- 10E-6;
 check_validity <- function(file) {
@@ -47,30 +48,30 @@ preliminary_visualization <- function(language,file){
   colnames(languageData) = c("vertices","degree_2nd_moment","mean_length")
   languageData = languageData[order(languageData$vertices), ]
   
-  postscript(paste('./figures/',language,"_vertices","_meanLength",'.ps',sep = ""))
+  postscript(paste('./figures/',language,"_vertices","_meanLength",'.eps',sep = ""))
   plot(languageData$vertices, languageData$mean_length, xlab = "vertices", ylab = "mean dependency length", main = language)
   dev.off()
   
-  postscript(paste('./figures/',language,"_logVertices","_logMeanLength",'.ps',sep = ""))
+  postscript(paste('./figures/',language,"_logVertices","_logMeanLength",'.eps',sep = ""))
   plot(log(languageData$vertices), log(languageData$mean_length), xlab = "log(vertices)", ylab = "log(mean dependency length)", main = language)
   dev.off()
   
   mean_Language = aggregate(languageData, list(languageData$vertices), mean)
-  postscript(paste('./figures/',language,"_meanVertices","_meanMeanLength",'.ps',sep = ""))
+  postscript(paste('./figures/',language,"_meanVertices","_meanMeanLength",'.eps',sep = ""))
   plot(mean_Language$vertices, mean_Language$mean_length, xlab = "vertices", ylab = "mean mean dependency length", main = language)
   dev.off()
   
-  postscript(paste('./figures/',language,"_logVertices","_logMeanMeanLength",'.ps',sep = ""))
+  postscript(paste('./figures/',language,"_logVertices","_logMeanMeanLength",'.eps',sep = ""))
   plot(log(mean_Language$vertices), log(mean_Language$mean_length), xlab = "log(vertices)", ylab = "log(mean mean dependency length)", main = language)
   dev.off()
   
-  postscript(paste('./figures/',language,"_logVertices","_logMeanMeanLength",'_plusEstimation','.ps',sep = ""))
+  postscript(paste('./figures/',language,"_logVertices","_logMeanMeanLength",'_plusEstimation','.eps',sep = ""))
   plot(log(languageData$vertices), log(languageData$mean_length), xlab = "log(vertices)", ylab = "log(mean mean dependency length)", main = language)
   lines(log(mean_Language$vertices),log(mean_Language$mean_length),col = "green")
   lines(log(mean_Language$vertices),log((mean_Language$vertices+1)/3),col = "red")
   dev.off()
   
-  postscript(paste('./figures/',language,"_vertices","_degree_2nd_moment",'_plusEstimation','.ps',sep = ""))
+  postscript(paste('./figures/',language,"_vertices","_degree_2nd_moment",'_plusEstimation','.eps',sep = ""))
   plot(languageData$vertices, languageData$degree_2n_moment, xlab = "vertices", ylab = "degree 2nd moment", main = language)
   lines(mean_Language$vertices,mean_Language$degree_2nd_moment,col = "green")
   lines(languageData$vertices,
@@ -169,23 +170,23 @@ ensemble_fitting <- function(languageData, language) {
   
   ##Plots
   #Model 1 plot
-  postscript(paste('./figures/',language,"_model1",'.ps',sep = ""))
-  plot(languageData$vertices, languageData$degree_2nd_moment, xlab = "vertices", ylab = "degree 2nd moment", main = language)
+  postscript(paste('./figures/',language,"_model1",'.eps',sep = ""))
+  plot(languageData$vertices, languageData$degree_2nd_moment, xlab = "vertices", ylab = "degree 2nd moment", main = paste(language," model 1"))
   b_model = coef(nonlinear_model_1)["b"];
   lines(languageData$vertices, (languageData$vertices/2)^b_model, col="green")
   dev.off()
   
   #Model 2 plot
-  postscript(paste('./figures/',language,"_model2",'.ps',sep = ""))
-  plot(languageData$vertices, languageData$degree_2nd_moment, xlab = "vertices", ylab = "degree 2nd moment", main = language)
+  postscript(paste('./figures/',language,"_model2",'.eps',sep = ""))
+  plot(languageData$vertices, languageData$degree_2nd_moment, xlab = "vertices", ylab = "degree 2nd moment", main = paste(language," model 2"))
   a_model = coef(nonlinear_model_2)["a"];
   b_model = coef(nonlinear_model_2)["b"];
   lines(languageData$vertices, a_model*languageData$vertices^b_model, col="green")
   dev.off()
   
   #Model 3 plot
-  postscript(paste('./figures/',language,"_model3",'.ps',sep = ""))
-  plot(languageData$vertices, languageData$degree_2nd_moment, xlab = "vertices", ylab = "degree 2nd moment", main = language)
+  postscript(paste('./figures/',language,"_model3",'.eps',sep = ""))
+  plot(languageData$vertices, languageData$degree_2nd_moment, xlab = "vertices", ylab = "degree 2nd moment", main = paste(language," model 3"))
   a_model = coef(nonlinear_model_3)["a"];
   c_model = coef(nonlinear_model_3)["c"];
   lines(languageData$vertices, a_model*exp(languageData$vertices*c_model), col="green")
