@@ -66,18 +66,21 @@ preliminary_visualization <- function(language,file){
   plot(log(mean_Language$V1), log(mean_Language$V2), xlab = "log(vertices)", ylab = "log(mean mean degree)")
   dev.off()
   
-#   postscript(paste('./figures/',language,"_logVertices","_logMeanMeanLength",'_plusEstimation','.eps',sep = ""))
-#   plot(log(languageData$vertices), log(languageData$mean_length), xlab = "log(vertices)", ylab = "log(mean mean dependency length)", main = language)
-#   lines(log(mean_Language$vertices),log(mean_Language$mean_length),col = "green")
-# 
-#   lines(log(mean_Language$vertices),log((mean_Language$vertices+1)/3),col = "red")
-#   dev.off()
   
   postscript(paste('./figures/',language,"_vertices","_degree_2nd_moment",'_plusEstimation','.eps',sep = ""))
   plot(log(languageData$V1), log(languageData$V2), xlab = "vertices", ylab = "degree 2nd moment")
   lines(log(mean_Language$V1),log(mean_Language$V2),col = "green")
   lines(log(languageData$V1),
         log((1-1/languageData$V1)*(5-6/languageData$V1)),col = "red")
+  dev.off()
+
+  postscript(paste('./figures/',language,"_vertices","_degree_2nd_moment",'_initialExploration','.eps',sep = ""))
+  plot(log(languageData$V1), log(languageData$V2), xlab = "vertices", ylab = "degree 2nd moment")
+  lines(mean_Language$V1,mean_Language$V2,col = "green")
+  lines(languageData$V1,
+        log((1-1/languageData$V1)*(5-6/languageData$V1)),col = "red")
+  lines(languageData$V1,4-6/languageData$V1,col = "blue")
+  lines(languageData$V1,languageData$V1-1,col = "blue")
   dev.off()
 }
 
@@ -265,9 +268,7 @@ ensemble_fitting_plus <- function(languageData, language) {
   sv[i] <- sqrt(RSS/(n - p))
   AICv[i] <- n*log(2*pi) + n*log(RSS/n) + n + 2*(p+1)
 
-  #d <- min(languageData$degree_2nd_moment) #We get as d the minimum value (starting point)
 
-  #d_in <- mean(languageData$degree_2nd_moment)
   
   #Model 1+
   i <- 5
