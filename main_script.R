@@ -46,40 +46,38 @@ write_summary <- function(language,file) {
 
 preliminary_visualization <- function(language,file){
   languageData = read.table(file, header = FALSE);
-  colnames(languageData) = c("vertices","degree_2nd_moment","mean_length")
-  languageData = languageData[order(languageData$vertices), ]
+  #colnames(languageData) = c("vertices","degree_2nd_moment","mean_length")
+  languageData = languageData[order(languageData$V1), ]
   
-  postscript(paste('./figures/',language,"_vertices","_meanLength",'.eps',sep = ""))
-  plot(languageData$vertices, languageData$mean_length, xlab = "vertices", ylab = "mean dependency length", main = language)
+  postscript(paste('./figures/',language,"_vertices","_meanDegree",'.eps',sep = ""))
+  plot(languageData$V1, languageData$V2, xlab = "vertices", ylab = "degree 2nd moment")
   dev.off()
   
-  postscript(paste('./figures/',language,"_logVertices","_logMeanLength",'.eps',sep = ""))
-  plot(log(languageData$vertices), log(languageData$mean_length), xlab = "log(vertices)", ylab = "log(mean dependency length)", main = language)
+  postscript(paste('./figures/',language,"_logVertices","_logDegree",'.eps',sep = ""))
+  plot(log(languageData$V1), log(languageData$V2), xlab = "log(vertices)", ylab = "log(mean degree)")
   dev.off()
   
-  mean_Language = aggregate(languageData, list(languageData$vertices), mean)
-  postscript(paste('./figures/',language,"_meanVertices","_meanMeanLength",'.eps',sep = ""))
-  plot(mean_Language$vertices, mean_Language$mean_length, xlab = "vertices", ylab = "mean mean dependency length", main = language)
+  mean_Language = aggregate(languageData, list(languageData$V1), mean)
+  postscript(paste('./figures/',language,"_meanVertices","_meanDegree",'.eps',sep = ""))
+  plot(mean_Language$V1, mean_Language$V2, xlab = "vertices", ylab = "mean mean degree")
   dev.off()
   
-  postscript(paste('./figures/',language,"_logVertices","_logMeanMeanLength",'.eps',sep = ""))
-  plot(log(mean_Language$vertices), log(mean_Language$mean_length), xlab = "log(vertices)", ylab = "log(mean mean dependency length)", main = language)
+  postscript(paste('./figures/',language,"_logVertices","_logMeanMeanDegree",'.eps',sep = ""))
+  plot(log(mean_Language$V1), log(mean_Language$V2), xlab = "log(vertices)", ylab = "log(mean mean degree)")
   dev.off()
   
-  postscript(paste('./figures/',language,"_logVertices","_logMeanMeanLength",'_plusEstimation','.eps',sep = ""))
-  plot(log(languageData$vertices), log(languageData$mean_length), xlab = "log(vertices)", ylab = "log(mean mean dependency length)", main = language)
-  lines(log(mean_Language$vertices),log(mean_Language$mean_length),col = "green")
-
-  lines(log(mean_Language$vertices),log((mean_Language$vertices+1)/3),col = "red")
-  dev.off()
+#   postscript(paste('./figures/',language,"_logVertices","_logMeanMeanLength",'_plusEstimation','.eps',sep = ""))
+#   plot(log(languageData$vertices), log(languageData$mean_length), xlab = "log(vertices)", ylab = "log(mean mean dependency length)", main = language)
+#   lines(log(mean_Language$vertices),log(mean_Language$mean_length),col = "green")
+# 
+#   lines(log(mean_Language$vertices),log((mean_Language$vertices+1)/3),col = "red")
+#   dev.off()
   
   postscript(paste('./figures/',language,"_vertices","_degree_2nd_moment",'_plusEstimation','.eps',sep = ""))
-  plot(languageData$vertices, languageData$degree_2n_moment, xlab = "vertices", ylab = "degree 2nd moment", main = language)
-  lines(mean_Language$vertices,mean_Language$degree_2nd_moment,col = "green")
-  lines(languageData$vertices,
-        (1-1/languageData$vertices)*(5-6/languageData$vertices),col = "red")
-  lines(languageData$vertices, 4-6/languageData$vertices,col = "blue")
-  lines(languageData$vertices, languageData$vertices-1,col = "blue")
+  plot(log(languageData$V1), log(languageData$V2), xlab = "vertices", ylab = "degree 2nd moment")
+  lines(log(mean_Language$V1),log(mean_Language$V2),col = "green")
+  lines(log(languageData$V1),
+        log((1-1/languageData$V1)*(5-6/languageData$V1)),col = "red")
   dev.off()
 }
 
@@ -268,29 +266,33 @@ ensemble_fitting_plus <- function(languageData, language) {
   AICv[i] <- n*log(2*pi) + n*log(RSS/n) + n + 2*(p+1)
 
   #d <- min(languageData$degree_2nd_moment) #We get as d the minimum value (starting point)
-  d_in <- 0
+
   #d_in <- mean(languageData$degree_2nd_moment)
   
   #Model 1+
   i <- 5
+  d_in <- 5-(500/2)^b_initial_model_1;
   nonlinear_model_1p = nls(degree_2nd_moment~(vertices/2)^b+d,data=languageData, start = list( b = b_initial_model_1, d=d_in), trace = TRUE)
   
   AICv[i] <- AIC(nonlinear_model_1p)
   sv[i] <- calcS(nonlinear_model_1p)
   
   #Model 2+
-  i <- 6
-  nonlinear_model_2p = nls(degree_2nd_moment~a*vertices^b+d,data=languageData, start = list(a = a_initial_model_2, b = b_initial_model_2, d=d_in), trace = TRUE)
-  
-  AICv[i] <- AIC(nonlinear_model_2p)
-  sv[i] <- calcS(nonlinear_model_2p)
-  
-  #Model 3+
-  i <- 7
-  nonlinear_model_3 = nls(degree_2nd_moment~a*exp(vertices*c)+d,data=languageData, start = list(a = a_initial_model_3, c = c_initial_model_3, d=d_in), trace = TRUE)
-  
-  AICv[i] <- AIC(nonlinear_model_3p)
-  sv[i] <- calcS(nonlinear_model_3p)
+#   i <- 6
+#   d_in <- min(languageData$degree_2nd_moment)-(a_initial_model_2*min(languageData$vertices)^b_initial_model_2);
+#   nls.control(maxiter = 100);
+#   print("yes here")
+#   nonlinear_model_2p = nls(degree_2nd_moment~a*vertices^b+d,data=languageData, start = list(a = a_initial_model_2, b = b_initial_model_2, d=d_in), trace = TRUE, algorithm = "port", nls.control(maxiter = 2000, minFactor = 10E-11))
+#   
+#   AICv[i] <- AIC(nonlinear_model_2p)
+#   sv[i] <- calcS(nonlinear_model_2p)
+#   
+#   #Model 3+
+#   i <- 7
+#   nonlinear_model_3 = nls(degree_2nd_moment~a*exp(vertices*c)+d,data=languageData, start = list(a = a_initial_model_3, c = c_initial_model_3, d=d_in), trace = TRUE)
+#   
+#   AICv[i] <- AIC(nonlinear_model_3p)
+#   sv[i] <- calcS(nonlinear_model_3p)
   
     
   ##Plots
@@ -328,36 +330,36 @@ ensemble_fitting_plus <- function(languageData, language) {
   dev.off()
   
   #Model 2+ plot
-  postscript(paste('./figures/',language,"_model2p",'.eps',sep = ""))
-  plot(languageData$vertices, languageData$degree_2nd_moment, xlab = "vertices", ylab = "degree 2nd moment", main = language)
-  a_model_2p = coef(nonlinear_model_2p)["a"];
-  b_model_2p = coef(nonlinear_model_2p)["b"];
-  d_model_2p = coef(nonlinear_model_2p)["d"];
-  lines(languageData$vertices, a_model_2p*languageData$vertices^b_model_2p+d_model_2p, col="green")
-  dev.off()
+#   postscript(paste('./figures/',language,"_model2p",'.eps',sep = ""))
+#   plot(languageData$vertices, languageData$degree_2nd_moment, xlab = "vertices", ylab = "degree 2nd moment", main = language)
+#   a_model_2p = coef(nonlinear_model_2p)["a"];
+#   b_model_2p = coef(nonlinear_model_2p)["b"];
+#   d_model_2p = coef(nonlinear_model_2p)["d"];
+#   lines(languageData$vertices, a_model_2p*languageData$vertices^b_model_2p+d_model_2p, col="green")
+#   dev.off()
+#   
+#   #Model 3+ plot
+#   postscript(paste('./figures/',language,"_model3p",'.eps',sep = ""))
+#   plot(languageData$vertices, languageData$degree_2nd_moment, xlab = "vertices", ylab = "degree 2nd moment", main = language)
+#   a_model_3p = coef(nonlinear_model_3p)["a"];
+#   c_model_3p = coef(nonlinear_model_3p)["c"];
+#   d_model_3p = coef(nonlinear_model_3p)["d"];
+#   lines(languageData$vertices, a_model_3p*exp(languageData$vertices*c_model_3p)+d_model_3p, col="green")
+#   #lines(languageData$vertices, a_initial_model_3*exp(languageData$vertices*c_initial_model_3)+d_initial_3p, col="red")
+#   dev.off()
   
-  #Model 3+ plot
-  postscript(paste('./figures/',language,"_model3p",'.eps',sep = ""))
-  plot(languageData$vertices, languageData$degree_2nd_moment, xlab = "vertices", ylab = "degree 2nd moment", main = language)
-  a_model_3p = coef(nonlinear_model_3p)["a"];
-  c_model_3p = coef(nonlinear_model_3p)["c"];
-  d_model_3p = coef(nonlinear_model_3p)["d"];
-  lines(languageData$vertices, a_model_3p*exp(languageData$vertices*c_model_3p)+d_model_3p, col="green")
-  #lines(languageData$vertices, a_initial_model_3*exp(languageData$vertices*c_initial_model_3)+d_initial_3p, col="red")
-  dev.off()
   
   
-  
-  deltaAICv <- (AICv - AICv[which.min(AICv)])
+  deltaAICv <- (AICv - AICv[which.min(AICv[1:5])])
   
   paramList <- list(
     c(b_model_1),
     c(a_model_2, b_model_2),
     c(a_model_3, c_model_3),
     c("no"),
-    c(b_model_1p, d_model_1p),
-    c(a_model_2p, b_model_2p, d_model_2p),
-    c(a_model_2p, c_model_2p, d_model_3p)
+    c(b_model_1p, d_model_1p)#,
+    #c(a_model_2p, b_model_2p, d_model_2p),
+    #c(a_model_2p, c_model_2p, d_model_3p)
   )
   
   list(sv, AICv, deltaAICv, paramList)
@@ -388,10 +390,14 @@ for (i in 1:length(source$language)) { #For each language
   #x[[2]] <- AIC
   #x[[3]] <- delta AIC
   x <- modelResult[,i]
-  table2s <- rbind(table2s, data.frame(Mod1=x[[1]][1], Mod2=x[[1]][2], Mod3=x[[1]][3], Mod4=x[[1]][4], Mod5=x[[1]][5], Mod6=x[[1]][6], Mod7=x[[1]][7]))
-  table2AIC <- rbind(table2AIC, data.frame(Mod1=x[[2]][1], Mod2=x[[2]][2], Mod3=x[[2]][3], Mod4=x[[2]][4], Mod5=x[[2]][5], Mod6=x[[2]][6], Mod7=x[[2]][7]))
-  table2DeltaAIC <- rbind(table2DeltaAIC, data.frame(Mod1=x[[3]][1], Mod2=x[[3]][2], Mod3=x[[3]][3], Mod4=x[[3]][4], Mod5=x[[3]][5], Mod6=x[[3]][6], Mod7=x[[3]][7]))
-  
+#   table2s <- rbind(table2s, data.frame(Mod1=x[[1]][1], Mod2=x[[1]][2], Mod3=x[[1]][3], Mod4=x[[1]][4], Mod5=x[[1]][5], Mod6=x[[1]][6], Mod7=x[[1]][7]))
+#   table2AIC <- rbind(table2AIC, data.frame(Mod1=x[[2]][1], Mod2=x[[2]][2], Mod3=x[[2]][3], Mod4=x[[2]][4], Mod5=x[[2]][5], Mod6=x[[2]][6], Mod7=x[[2]][7]))
+#   table2DeltaAIC <- rbind(table2DeltaAIC, data.frame(Mod1=x[[3]][1], Mod2=x[[3]][2], Mod3=x[[3]][3], Mod4=x[[3]][4], Mod5=x[[3]][5], Mod6=x[[3]][6], Mod7=x[[3]][7]))
+   table2s <- rbind(table2s, data.frame(Mod1=x[[1]][1], Mod2=x[[1]][2], Mod3=x[[1]][3], Mod4=x[[1]][4], Mod5=x[[1]][5]))
+   table2AIC <- rbind(table2AIC, data.frame(Mod1=x[[2]][1], Mod2=x[[2]][2], Mod3=x[[2]][3], Mod4=x[[2]][4], Mod5=x[[2]][5]))
+   table2DeltaAIC <- rbind(table2DeltaAIC, data.frame(Mod1=x[[3]][1], Mod2=x[[3]][2], Mod3=x[[3]][3], Mod4=x[[3]][4], Mod5=x[[3]][5]))
+
+#   
   #Parameter table
   #Parameter (nested in model)
   par <- x[[4]]
@@ -399,9 +405,9 @@ for (i in 1:length(source$language)) { #For each language
     b1= par[[1]][1], #Model 1
     a2=par[[2]][1], b2=par[[2]][2], #Model 2
     a3=par[[3]][1], c3=par[[3]][2], #Model 3
-    b5=par[[5]][1], d5=par[[5]][2], #Model 1+
-    a6=par[[6]][1], b6=par[[6]][2], d6=par[[6]][3], #Model 3
-    a7=par[[7]][1], c7=par[[7]][2], d7=par[[7]][3] #Model 3
+    b5=par[[5]][1], d5=par[[5]][2]#, #Model 1+
+#     a6=par[[6]][1], b6=par[[6]][2], d6=par[[6]][3], #Model 3
+#     a7=par[[7]][1], c7=par[[7]][2], d7=par[[7]][3] #Model 3
   ))
 
 }

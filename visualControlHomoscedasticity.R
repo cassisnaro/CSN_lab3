@@ -5,7 +5,14 @@ source = read.table("list.txt",
                     as.is = c("language","file") # this is need to have the cells treated as real strings and not as categorial data.
 )
 
-#setEPS()#Set graphics as EPS
+setEPS()#Set graphics as EPS
+
+# x=1
+# dataRead = read.table(source$file[x],header=FALSE)
+# colnames(dataRead) = c("vertices","degree_2nd_moment","mean_length")
+# language <- source$language[x]
+# plot(dataRead$vertices, dataRead$degree_2nd_moment)
+# points(dataRead$vertices,(dataRead$vertices/2)^0.451225,col= "red")
 
 for(x in 1:nrow(source)){
   dataRead = read.table(source$file[x],header=FALSE)
@@ -28,13 +35,13 @@ for(x in 1:nrow(source)){
   dataFrameCorrelation <- data.frame( Means = means, Vars = vars)
   cat(language,"\'s correlation: ",cor(dataFrameCorrelation, use ="complete.obs")["Means","Vars"],"");
 
-  #postscript(paste('./homoscedasticity/',language,"_noModel",'.ps',sep = ""))
-  plot(range(dataRead$vertices), range(0:max(vars, na.rm = TRUE)),type="n")
+  postscript(paste('./homoscedasticity/',language,"_noModel",'.eps',sep = ""))
+  plot(range(dataRead$vertices), range(0:max(vars, na.rm = TRUE)),ylab = "var(degree 2nd moment)", xlab="vertices", type="n")
   for (i in 1:numberbins){
     segments(mylevels[i,1],vars[i],mylevels[i,2],vars[i])
     points(mean(mylevels[i,1],mylevels[i,2]),nrow(dataRead[which (dataRead$group==i),])/nrow(dataRead))
   }
-  #dev.off()
+ dev.off()
   cat ("Press [enter] to continue")
   line <- readline()
   
